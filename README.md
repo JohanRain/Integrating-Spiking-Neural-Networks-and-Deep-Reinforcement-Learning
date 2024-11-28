@@ -1,2 +1,17 @@
-# Integrating-Spiking-Neural-Networks-and-Deep-Reinforcement-Learning
-Homework for Systems and Computational Neuroscience Course
+# 融合脉冲神经网络与深度强化学习
+系统与计算神经科学课程作业
+
+本项目探讨脉冲神经网络与深度强化学习结合的潜力，通过解决经典强化学习问题——CartPole，来验证这种结合的表现和优势。
+
+## 实验环境
+
+- **操作系统**：Windows 11
+- **编程语言**：Python 3.10
+- **编程工具**：Visual Studio Code
+- **主要库及版本**：
+  - Pytorch 2.5.1
+  - Gymnasium 1.0.0
+  - SpikingJelly 0.0.0.0.14
+
+## 项目结构
+
