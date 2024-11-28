@@ -44,3 +44,39 @@
   - ``img``：图片文件夹
   - `Report.pdf`：实验报告PDF版本
   - `Report.typ`：实验报告源文件
+
+## 使用方法
+
+1. 克隆仓库并安装依赖库
+
+```shell
+git clone https://github.com/JohanRain/Integrating-Spiking-Neural-Networks-and-Deep-Reinforcement-Learning.git
+cd Exp
+pip install -r requirements.txt
+```
+
+2. 运行主程序
+
+根据需求修改`main.py`中的参数，DQNTrainer负责训练模型，DQNPlayer负责测试模型。
+
+```shell
+python main.py
+```
+
+3. 绘制图表
+
+```shell
+jupyter notebook plot.ipynb
+```
+
+## 主要功能
+
+- 训练与测试： 使用脉冲神经网络实现深度Q学习，解决CartPole任务
+- 数据分析： 保存并分析训练过程中的关键指标，包括损失和奖励数据
+- 模型保存： 支持不同层数和神经元数量的模型保存与加载
+- 可视化： 提供完整的绘图功能，用于分析训练趋势和模型性能
+
+## 注意事项
+
+- 依赖库问题： 请确保安装的库版本与 requirements.txt 中的版本一致，以避免兼容性问题。
+- 参数调整： 可在 main.py 中根据需求调整超参数（如隐藏层数量、神经元数量、时间步长等）。

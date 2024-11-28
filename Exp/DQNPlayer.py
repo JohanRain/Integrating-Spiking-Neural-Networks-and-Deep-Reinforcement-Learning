@@ -5,20 +5,63 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from spikingjelly.activation_based import functional, monitor, neuron
-
 from algorithm.DQN import DQSN
+from spikingjelly.activation_based import functional, monitor, neuron
 
 
 class DQNPlayer:
+    """
+    A class to represent a Deep Q-Network (DQN) player.
+    Attributes
+    ----------
+    device : torch.device
+        The device to run the computations on (CPU or GPU).
+    env : gym.Env
+        The environment in which the agent will play.
+    n_states : int
+        The number of states in the environment.
+    n_actions : int
+        The number of possible actions in the environment.
+    policy_net : DQSN
+        The policy network used by the agent.
+    T : int
+        The time constant for the spiking neural network.
+    actions : list
+        A list to store the actions taken by the agent.
+    rewards : list
+        A list to store the rewards received by the agent.
+    Methods
+    -------
+    play(played_frames=60, save_fig_num=0, fig_dir=None, figsize=(12, 6), firing_rates_plot_type="bar", heatmap_shape=None):
+        Plays and visualizes the game process of the DQN.
+    _plot_voltage(LIF_v, action, delta_lim, plot_type):
+        Plots the voltage of LIF neurons at the last time step.
+    _plot_firing_rates(firing_rates, plot_type, heatmap_shape):
+        Plots the firing rates of IF neurons.
+    _update_env(state, action, i, over_score):
+        Interacts with the environment and updates the state.
+    _plot_game_screen(state, i, save_fig_num, fig_dir, plot_type):
+        Renders and plots the game screen.
+    """
+
     def __init__(self, use_cuda, env_name, hidden_size, pt_path, T=16):
         """
-        初始化 DQN Player
-        :param use_cuda: 是否使用 GPU
-        :param env_name: 环境名称
-        :param hidden_size: 隐藏层大小
-        :param pt_path: 模型权重文件路径
-        :param T: 时间步数，用于 SNN 模型
+        Initializes the DQNPlayer.
+        Args:
+            use_cuda (bool): If True, use CUDA for computation.
+            env_name (str): The name of the environment to create.
+            hidden_size (int): The size of the hidden layer in the neural network.
+            pt_path (str): The path to the pre-trained model.
+            T (int, optional): The time step parameter for the DQSN model. Default is 16.
+        Attributes:
+            device (torch.device): The device to run the computations on.
+            env (gym.Env): The environment instance.
+            n_states (int): The number of states in the environment.
+            n_actions (int): The number of actions in the environment.
+            policy_net (DQSN): The policy network model.
+            T (int): The time step parameter for the DQSN model.
+            actions (list): List to store actions taken.
+            rewards (list): List to store rewards received.
         """
         self.device = torch.device("cuda" if use_cuda else "cpu")
         self.env = gym.make(env_name, render_mode="rgb_array_list").unwrapped
@@ -30,7 +73,6 @@ class DQNPlayer:
         self.policy_net.load_state_dict(torch.load(pt_path, map_location=self.device))
         self.T = T
 
-        # 用于保存 action 和 reward
         self.actions = []
         self.rewards = []
 
@@ -44,7 +86,16 @@ class DQNPlayer:
         heatmap_shape=None,
     ):
         """
-        播放并可视化 DQN 的游戏过程
+        Simulates playing the game using the trained policy network.
+        Args:
+            played_frames (int, optional): Number of frames to play. Defaults to 60.
+            save_fig_num (int, optional): Number of figures to save. Defaults to 0.
+            fig_dir (str, optional): Directory to save figures. Defaults to None.
+            figsize (tuple, optional): Size of the figure for plotting. Defaults to (12, 6).
+            firing_rates_plot_type (str, optional): Type of plot for firing rates ("bar" or other types). Defaults to "bar".
+            heatmap_shape (tuple, optional): Shape of the heatmap for firing rates. Defaults to None.
+        Returns:
+            None
         """
         plt.rcParams["figure.figsize"] = figsize
         plt.ion()
@@ -58,37 +109,36 @@ class DQNPlayer:
 
         with torch.no_grad():
             for i in count():
-                # 获取动作
-                LIF_v = self.policy_net(state)  # shape=[1, 2]
+                # Get the action from the policy network
+                LIF_v = self.policy_net(state)
                 action = LIF_v.max(1)[1].view(1, 1).item()
 
-                # 保存 action
                 self.actions.append(action)
 
-                # 可视化神经元电压
+                # Visualize the voltage of LIF neurons at the last time step
                 # self._plot_voltage(LIF_v, action, delta_lim, firing_rates_plot_type)
 
-                # 获取并绘制神经元的放电频率
+                # Get the firing rates of IF neurons
                 IF_spikes = torch.cat(spike_seq_monitor.records, 0)
                 firing_rates = IF_spikes.mean(axis=0)
                 # self._plot_firing_rates(
                 #     firing_rates, firing_rates_plot_type, heatmap_shape
                 # )
 
-                # 重置网络状态
+                # Reset the network
                 functional.reset_net(self.policy_net)
 
-                # 环境交互并更新状态
+                # Interact with the environment and update the state
                 reward, subtitle, done, state = self._update_env(
                     state, action, i, over_score
                 )
 
-                # 保存 reward
+                # Store the reward
                 self.rewards.append(reward)
 
                 # plt.suptitle(subtitle)
 
-                # 渲染游戏画面
+                # Plot the game screen
                 # self._plot_game_screen(
                 #     state, i, save_fig_num, fig_dir, firing_rates_plot_type
                 # )
@@ -161,7 +211,7 @@ class DQNPlayer:
 
     def _plot_game_screen(self, state, i, save_fig_num, fig_dir, plot_type):
         screen = self.env.render().copy()
-        screen[300, :, :] = 0  # 画出黑线
+        screen[300, :, :] = 0
 
         if plot_type == "bar":
             plt.subplot2grid((2, 9), (0, 0), colspan=3)
